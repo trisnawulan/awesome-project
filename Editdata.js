@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SafeAreaView, View, TextInput, Button, StyleSheet, Text, FlatList, TouchableOpacity } from 'react-native';
-import { ScrollView } from 'react-native-virtualized-view';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPenToSquare, faGraduationCap } from '@fortawesome/free-solid-svg-icons';
 
 const Createdata = () => {
-    const jsonUrl = 'http://192.168.82.125:3000/mahasiswa'; // Ganti dengan IP server Anda
+    const jsonUrl = 'http://192.168.136.125:3000/mahasiswa';
     const [first_name, setFirstName] = useState('');
     const [last_name, setLastName] = useState('');
     const [kelas, setKelas] = useState('');
@@ -16,13 +15,11 @@ const Createdata = () => {
     const [dataUser, setDataUser] = useState([]);
     const [refresh, setRefresh] = useState(false);
 
-    // Fetch data from API
     const fetchData = () => {
         setLoading(true);
         fetch(jsonUrl)
             .then((response) => response.json())
             .then((json) => {
-                console.log('Fetched data:', json);
                 setDataUser(json);
             })
             .catch((error) => console.error(error))
@@ -37,6 +34,15 @@ const Createdata = () => {
         setRefresh(true);
         fetchData();
         setRefresh(false);
+    };
+
+    const resetForm = () => {
+        setFirstName('');
+        setLastName('');
+        setKelas('');
+        setGender('');
+        setEmail('');
+        setSelectedUser({});
     };
 
     const selectItem = (item) => {
@@ -57,103 +63,88 @@ const Createdata = () => {
             gender: gender,
         };
 
-        fetch(`http://192.168.82.125:3000/mahasiswa/${selectedUser.id}`, {
-            method: 'PATCH',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        })
-            .then((response) => response.json())
-            .then((json) => {
-                console.log('Response:', json);
-                alert('Data berhasil diperbarui');
-                setFirstName('');
-                setLastName('');
-                setKelas('');
-                setGender('');
-                setEmail('');
-                refreshPage();
+        if (selectedUser && selectedUser.id) {
+            // Edit data
+            fetch(`${jsonUrl}/${selectedUser.id}`, {
+                method: 'PUT',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
             })
-            .catch((error) => console.error(error));
+                .then((response) => response.json())
+                .then(() => {
+                    alert('Data diperbarui');
+                    resetForm();
+                    refreshPage();
+                });
+        } else {
+            // Tambah data baru
+            fetch(jsonUrl, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+                .then((response) => response.json())
+                .then(() => {
+                    alert('Data tersimpan');
+                    resetForm();
+                    refreshPage();
+                });
+        }
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View>
+        <SafeAreaView style={{ flex: 1 }}>
+            <View style={{ flex: 1 }}>
                 {isLoading ? (
-                    <View style={styles.loadingContainer}>
+                    <View style={{ alignItems: 'center', marginTop: 20 }}>
                         <Text style={styles.cardtitle}>Loading...</Text>
                     </View>
                 ) : (
-                    <View>
-                        <ScrollView style={styles.form}>
-                            <View>
-                                <Text style={styles.title}>Edit Data Mahasiswa</Text>
-                                <View style={styles.form}>
-                                    <TextInput
-                                        style={styles.input}
-                                        placeholder="Nama Depan"
-                                        value={first_name}
-                                        onChangeText={(value) => setFirstName(value)}
-                                    />
-                                    <TextInput
-                                        style={styles.input}
-                                        placeholder="Nama Belakang"
-                                        value={last_name}
-                                        onChangeText={(value) => setLastName(value)}
-                                    />
-                                    <TextInput
-                                        style={styles.input}
-                                        placeholder="Kelas"
-                                        value={kelas}
-                                        onChangeText={(value) => setKelas(value)}
-                                    />
-                                    <TextInput
-                                        style={styles.input}
-                                        placeholder="Jenis Kelamin"
-                                        value={gender}
-                                        onChangeText={(value) => setGender(value)}
-                                    />
-                                    <TextInput
-                                        style={styles.input}
-                                        placeholder="Email"
-                                        value={email}
-                                        onChangeText={(value) => setEmail(value)}
-                                    />
-                                    <Button title="Edit" style={styles.button} onPress={submit} />
-                                </View>
-                            </View>
-                            <View style={styles.devider}></View>
-
-                            <FlatList
-                                style={{ marginBottom: 10 }}
-                                data={dataUser}
-                                onRefresh={refreshPage}
-                                refreshing={refresh}
-                                keyExtractor={(item) => item.id.toString()}
-                                renderItem={({ item }) => (
-                                    <TouchableOpacity onPress={() => selectItem(item)}>
-                                        <View style={styles.card}>
-                                            <View style={styles.avatar}>
-                                                <FontAwesomeIcon icon={faGraduationCap} size={50} />
-                                            </View>
-                                            <View>
-                                                <Text style={styles.cardtitle}>
-                                                    {item.first_name} {item.last_name}
-                                                </Text>
-                                                <Text>{item.kelas}</Text>
-                                                <Text>{item.gender}</Text>
-                                            </View>
-                                            <View style={styles.editIcon}>
-                                                <FontAwesomeIcon icon={faPenToSquare} size={20} />
-                                            </View>
-                                        </View>
-                                    </TouchableOpacity>
-                                )}
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.title}>Edit Data Mahasiswa</Text>
+                        <View style={styles.form}>
+                            <TextInput style={styles.input} placeholder="Nama Depan" value={first_name} onChangeText={setFirstName} />
+                            <TextInput style={styles.input} placeholder="Nama Belakang" value={last_name} onChangeText={setLastName} />
+                            <TextInput style={styles.input} placeholder="Kelas" value={kelas} onChangeText={setKelas} />
+                            <TextInput style={styles.input} placeholder="Jenis Kelamin" value={gender} onChangeText={setGender} />
+                            <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} />
+                            <Button
+                                title={selectedUser && selectedUser.id ? 'Perbarui' : 'Simpan'}
+                                style={styles.button}
+                                onPress={submit}
                             />
-                        </ScrollView>
+                        </View>
+                        <FlatList
+                            data={dataUser}
+                            onRefresh={refreshPage}
+                            refreshing={refresh}
+                            keyExtractor={(item) => item.id.toString()}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity onPress={() => selectItem(item)}>
+                                    <View style={styles.card}>
+                                        <View style={styles.avatar}>
+                                            <FontAwesomeIcon icon={faGraduationCap} size={50} />
+                                        </View>
+                                        <View>
+                                            <Text style={styles.cardtitle}>
+                                                {item.first_name} {item.last_name}
+                                            </Text>
+                                            <Text>{item.kelas}</Text>
+                                            <Text>{item.gender}</Text>
+                                        </View>
+                                        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'flex-end' }}>
+                                            <FontAwesomeIcon icon={faPenToSquare} size={20} />
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+                            )}
+                        />
                     </View>
                 )}
             </View>
@@ -164,10 +155,6 @@ const Createdata = () => {
 export default Createdata;
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f5f5f5',
-    },
     title: {
         paddingVertical: 12,
         backgroundColor: '#333',
@@ -194,32 +181,18 @@ const styles = StyleSheet.create({
     card: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 10,
+        padding: 15,
         marginVertical: 5,
-        backgroundColor: '#fff',
+        marginHorizontal: 10,
+        backgroundColor: '#f9f9f9',
         borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#ddd',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 3,
+        elevation: 2,
     },
     avatar: {
-        marginRight: 10,
+        marginRight: 15,
     },
     cardtitle: {
-        fontWeight: 'bold',
         fontSize: 16,
-    },
-    editIcon: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'flex-end',
-    },
-    loadingContainer: {
-        alignItems: 'center',
-        marginTop: 20,
+        fontWeight: 'bold',
     },
 });
