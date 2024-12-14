@@ -1,198 +1,253 @@
-import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View, TextInput, Button, StyleSheet, Text, FlatList, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { SafeAreaView, View, TextInput, StyleSheet, Text, TouchableOpacity, ScrollView,} from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faPenToSquare, faGraduationCap } from '@fortawesome/free-solid-svg-icons';
+import {  faEdit, faSave, faPlus, faSync, faHotel } from '@fortawesome/free-solid-svg-icons';
 
 const Createdata = () => {
     const jsonUrl = 'http://192.168.136.125:3000/mahasiswa';
-    const [first_name, setFirstName] = useState('');
-    const [last_name, setLastName] = useState('');
-    const [kelas, setKelas] = useState('');
-    const [gender, setGender] = useState('');
-    const [email, setEmail] = useState('');
-    const [selectedUser, setSelectedUser] = useState({});
-    const [isLoading, setLoading] = useState(true);
+    const [name, setName] = useState('');
+    const [rating, setRating] = useState('');
+    const [address, setAddress] = useState('');
+    const [checkin, setCheckin] = useState('');
+    const [checkout, setCheckout] = useState('');
+    const [selectedUser, setSelectedUser] = useState(null);
     const [dataUser, setDataUser] = useState([]);
-    const [refresh, setRefresh] = useState(false);
-
-    const fetchData = () => {
-        setLoading(true);
-        fetch(jsonUrl)
-            .then((response) => response.json())
-            .then((json) => {
-                setDataUser(json);
-            })
-            .catch((error) => console.error(error))
-            .finally(() => setLoading(false));
-    };
 
     useEffect(() => {
         fetchData();
     }, []);
 
-    const refreshPage = () => {
-        setRefresh(true);
-        fetchData();
-        setRefresh(false);
+    const fetchData = () => {
+        fetch(jsonUrl)
+            .then((response) => response.json())
+            .then((json) => setDataUser(json))
+            .catch((error) => console.error(error));
     };
 
-    const resetForm = () => {
-        setFirstName('');
-        setLastName('');
-        setKelas('');
-        setGender('');
-        setEmail('');
-        setSelectedUser({});
+    const handleSubmit = () => {
+        const data = { name, rating, address, checkin, checkout };
+        const url = selectedUser ? `${jsonUrl}/${selectedUser.id}` : jsonUrl;
+        const method = selectedUser ? 'PATCH' : 'POST';
+
+        fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        })
+            .then(() => {
+                alert(selectedUser ? 'Data berhasil diperbarui!' : 'Data berhasil ditambahkan!');
+                clearForm();
+                fetchData();
+            })
+            .catch((error) => console.error(error));
+    };
+
+    const clearForm = () => {
+        setName('');
+        setRating('');
+        setAddress('');
+        setCheckin('');
+        setCheckout('');
+        setSelectedUser(null);
     };
 
     const selectItem = (item) => {
         setSelectedUser(item);
-        setFirstName(item.first_name);
-        setLastName(item.last_name);
-        setKelas(item.kelas);
-        setGender(item.gender);
-        setEmail(item.email);
+        setName(item.name);
+        setRating(item.rating);
+        setAddress(item.address);
+        setCheckin(item.checkin);
+        setCheckout(item.checkout);
     };
 
-    const submit = () => {
-        const data = {
-            first_name: first_name,
-            last_name: last_name,
-            email: email,
-            kelas: kelas,
-            gender: gender,
-        };
-
-        if (selectedUser && selectedUser.id) {
-            // Edit data
-            fetch(`${jsonUrl}/${selectedUser.id}`, {
-                method: 'PUT',
-                headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-            })
-                .then((response) => response.json())
-                .then(() => {
-                    alert('Data diperbarui');
-                    resetForm();
-                    refreshPage();
-                });
-        } else {
-            // Tambah data baru
-            fetch(jsonUrl, {
-                method: 'POST',
-                headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-            })
-                .then((response) => response.json())
-                .then(() => {
-                    alert('Data tersimpan');
-                    resetForm();
-                    refreshPage();
-                });
-        }
+    const handleRefresh = () => {
+        fetchData();
+        clearForm();
     };
 
     return (
-        <SafeAreaView style={{ flex: 1 }}>
-            <View style={{ flex: 1 }}>
-                {isLoading ? (
-                    <View style={{ alignItems: 'center', marginTop: 20 }}>
-                        <Text style={styles.cardtitle}>Loading...</Text>
-                    </View>
-                ) : (
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.title}>Edit Data Mahasiswa</Text>
-                        <View style={styles.form}>
-                            <TextInput style={styles.input} placeholder="Nama Depan" value={first_name} onChangeText={setFirstName} />
-                            <TextInput style={styles.input} placeholder="Nama Belakang" value={last_name} onChangeText={setLastName} />
-                            <TextInput style={styles.input} placeholder="Kelas" value={kelas} onChangeText={setKelas} />
-                            <TextInput style={styles.input} placeholder="Jenis Kelamin" value={gender} onChangeText={setGender} />
-                            <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} />
-                            <Button
-                                title={selectedUser && selectedUser.id ? 'Perbarui' : 'Simpan'}
-                                style={styles.button}
-                                onPress={submit}
-                            />
-                        </View>
-                        <FlatList
-                            data={dataUser}
-                            onRefresh={refreshPage}
-                            refreshing={refresh}
-                            keyExtractor={(item) => item.id.toString()}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity onPress={() => selectItem(item)}>
-                                    <View style={styles.card}>
-                                        <View style={styles.avatar}>
-                                            <FontAwesomeIcon icon={faGraduationCap} size={50} />
-                                        </View>
-                                        <View>
-                                            <Text style={styles.cardtitle}>
-                                                {item.first_name} {item.last_name}
-                                            </Text>
-                                            <Text>{item.kelas}</Text>
-                                            <Text>{item.gender}</Text>
-                                        </View>
-                                        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'flex-end' }}>
-                                            <FontAwesomeIcon icon={faPenToSquare} size={20} />
-                                        </View>
-                                    </View>
-                                </TouchableOpacity>
-                            )}
-                        />
-                    </View>
-                )}
+        <SafeAreaView style={styles.container}>
+            <View style={[styles.header, { backgroundColor: selectedUser ?  '#11264e': '#7bb7f0' }]}>
+                <Text style={styles.headerText}>{selectedUser ? 'Edit Data' : 'Tambah Data'}</Text>
             </View>
+            <View style={styles.formContainer}>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Hotel Kota Yogyakarta"
+                    placeholderTextColor="#aaa"
+                    value={name}
+                    onChangeText={setName}
+                />
+                <TextInput
+                    style={styles.input}
+                    placeholder="Rating"
+                    placeholderTextColor="#aaa"
+                    value={rating}
+                    onChangeText={setRating}
+                />
+                <TextInput
+                    style={styles.input}
+                    placeholder="Alamat"
+                    placeholderTextColor="#aaa"
+                    value={address}
+                    onChangeText={setAddress}
+                />
+                <TextInput
+                    style={styles.input}
+                    placeholder="Jam Check-in"
+                    placeholderTextColor="#aaa"
+                    value={checkin}
+                    onChangeText={setCheckin}
+                />
+                <TextInput
+                    style={styles.input}
+                    placeholder="Jam Check-out"
+                    placeholderTextColor="#aaa"
+                    value={checkout}
+                    onChangeText={setCheckout}
+                />
+                <TouchableOpacity
+                    style={[styles.button, selectedUser ? styles.editButton : styles.addButton]}
+                    onPress={handleSubmit}
+                >
+                    <FontAwesomeIcon icon={selectedUser ? faSave : faPlus} size={16} color="#fff" />
+                    <Text style={styles.buttonText}>{selectedUser ? 'Simpan' : 'Tambah'}</Text>
+                </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.refreshButton} onPress={handleRefresh}>
+                <FontAwesomeIcon icon={faSync} size={16} color="#fff" />
+            </TouchableOpacity>
+            <ScrollView style={styles.listContainer}>
+                {dataUser.map((item) => (
+                    <View key={item.id} style={styles.card}>
+                        <View style={styles.avatar}>
+                            <FontAwesomeIcon icon={faHotel} size={40} color="#11264e" />
+                        </View>
+                        <View style={styles.cardContent}>
+                            <Text style={styles.cardTitle}>{item.name}</Text>
+                            <Text style={styles.cardText}>Rating: {item.rating}</Text>
+                            <Text style={styles.cardText}>Alamat: {item.address}</Text>
+                            <Text style={styles.cardText}>
+                                Jam Operasional: {item.checkin} - {item.checkout}
+                            </Text>
+                        </View>
+                        <TouchableOpacity onPress={() => selectItem(item)} style={styles.editButtonCard}>
+                            <FontAwesomeIcon icon={faEdit} size={20} color="#fff" />
+                        </TouchableOpacity>
+                    </View>
+                ))}
+            </ScrollView>
         </SafeAreaView>
     );
 };
 
-export default Createdata;
-
 const styles = StyleSheet.create({
-    title: {
-        paddingVertical: 12,
-        backgroundColor: '#333',
-        color: 'white',
-        fontSize: 20,
-        fontWeight: 'bold',
-        textAlign: 'center',
+    container: {
+        flex: 1,
+        backgroundColor: '#f4f4f4',
     },
-    form: {
+    header: {
+        paddingVertical: 15,
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
+        elevation: 5,
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    headerText: {
+        fontSize: 26,
+        color: '#fff',
+        fontWeight: 'bold',
+        letterSpacing: 1,
+    },
+    formContainer: {
         padding: 10,
-        marginBottom: 10,
+        backgroundColor: '#fff',
+        margin: 10,
+        borderRadius: 10,
+        elevation: 5,
     },
     input: {
         borderWidth: 1,
-        borderColor: '#777',
-        borderRadius: 8,
-        padding: 8,
-        width: '100%',
-        marginVertical: 5,
+        borderColor: '#ccc',
+        borderRadius: 10,
+        padding: 10,
+        marginBottom: 10,
+        backgroundColor: '#f9f9f9',
+        color: '#333',
     },
     button: {
-        marginVertical: 10,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 12,
+        borderRadius: 10,
+        elevation: 3,
+    },
+    addButton: {
+        backgroundColor: '#11264e',
+    },
+    editButton: {
+        backgroundColor: '#7bb7f0',
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginLeft: 8,
+    },
+    refreshButton: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 8,
+        backgroundColor: '#2196F3',
+        borderRadius: 50,
+        position: 'absolute',
+        top: 20,
+        right: 10,
+        elevation: 3,
+    },
+    listContainer: {
+        marginHorizontal: 10,
+        marginTop: 10,
     },
     card: {
         flexDirection: 'row',
         alignItems: 'center',
+        backgroundColor: '#fff',
         padding: 15,
         marginVertical: 5,
-        marginHorizontal: 10,
-        backgroundColor: '#f9f9f9',
-        borderRadius: 8,
-        elevation: 2,
+        borderRadius: 10,
+        elevation: 3,
     },
     avatar: {
-        marginRight: 15,
+        backgroundColor: '#e8f5e9',
+        padding: 10,
+        borderRadius: 50,
     },
-    cardtitle: {
+    cardContent: {
+        flex: 1,
+        marginLeft: 15,
+    },
+    cardTitle: {
         fontSize: 16,
         fontWeight: 'bold',
+        color: '#333',
+    },
+    cardText: {
+        color: '#666',
+    },
+    editButtonCard: {
+        backgroundColor: '#2196F3',
+        padding: 10,
+        borderRadius: 50,
+        elevation: 2,
     },
 });
+
+export default Createdata;

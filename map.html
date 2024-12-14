@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peta Interaktif dengan Marker dan Form Input</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        #map {
+            height: calc(100% - 100px); /* Kurangi tinggi map agar tidak menutupi header */
+            width: 100%;
+        }
+
+        /* Header Styling */
+        .header {
+            background-color: #7bb7f0; /* Green color for header */
+            padding: 15px 0;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000
+        }
+
+        .header-text {
+            font-size: 26px;
+            color: #11264e;
+            font-weight: bold;
+            margin: 0;
+            letter-spacing: 1px;
+        }
+
+        /* Peta Fullscreen */
+        #map {
+            position: absolute;
+            top: 60px; /* Header height */
+            left: 0;
+            width: 100%;
+            height: calc(100% - 60px); /* Full height minus header */
+        }
+
+        /* Popup Form Styling */
+        #form-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 15px 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            z-index: 1000;
+            width: 90%;
+            max-width: 400px;
+            overflow-y: auto;
+            max-height: 80%;
+        }
+
+        #form-popup h2 {
+            margin-top: 0;
+            color: #11264e;
+            text-align: center;
+        }
+
+        input[type="text"],
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #11264e;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+        }
+
+        button:hover {
+            background-color: #11264e;
+        }
+
+        #close-button {
+            background-color: #E63946;
+        }
+
+        #close-button:hover {
+            background-color: #D62828;
+        }
+
+        /* Dim Background when Form is Open */
+        #dim-background {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        /* Add Point Button */
+        #add-point-btn {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #11264e;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 1000;
+            width: auto;
+            height: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #add-point-btn:hover {
+            background: #92b3f0;
+        }
+
+        /* Refresh Button */
+        #refresh-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 1001;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #refresh-btn:hover {
+            background: #1976D2;
+        }
+    </style>
+</head>
+
+<body>
+<!-- Header -->
+<div class="header">
+    <h1 class="header-text">Persebaran Hotel</h1>
+</div>
+
+<div id="dim-background"></div>
+<button id="add-point-btn">Tambahkan Titik</button>
+<button id="refresh-btn">🔄</button>
+<div id="map"></div>
+
+<!-- Form Popup -->
+<div id="form-popup">
+    <h2>Tambah Data</h2>
+    <form id="mahasiswaForm">
+        <input type="text" id="name" placeholder="Nama Hotel" required />
+        <input type="text" id="rating" placeholder="Rating" required />
+        <input type="text" id="address" placeholder="Alamat" required />
+        <input type="text" id="checkin" placeholder="Check-in" required />
+        <input type="text" id="checkout" placeholder="Check-out" required />
+        <input type="hidden" id="latitude" />
+        <input type="hidden" id="longitude" />
+        <button type="submit">Tambah Data</button>
+        <button type="button" id="close-button">Tutup</button>
+    </form>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+    var map = L.map('map').setView([-7.774796670378405, 110.37442978811552], 13);
+
+    // Basemap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18
+    }).addTo(map);
+
+    var formPopup = document.getElementById('form-popup');
+    var dimBackground = document.getElementById('dim-background');
+    var closeButton = document.getElementById('close-button');
+    var addPointBtn = document.getElementById('add-point-btn');
+    var refreshBtn = document.getElementById('refresh-btn');
+    var mahasiswaForm = document.getElementById('mahasiswaForm');
+    var marker = null;
+
+    // Event untuk menutup form
+    closeButton.addEventListener('click', function () {
+        formPopup.style.display = 'none';
+        dimBackground.style.display = 'none';
+    });
+
+    // Event tombol tambah titik
+    addPointBtn.addEventListener('click', function () {
+        if (!marker) {
+            marker = L.marker(map.getCenter(), { draggable: true }).addTo(map);
+            marker.bindPopup('Geser marker ke lokasi yang diinginkan, lalu klik marker untuk menambahkan data.').openPopup();
+
+            marker.on('click', function () {
+                var latLng = marker.getLatLng();
+                document.getElementById('latitude').value = latLng.lat;
+                document.getElementById('longitude').value = latLng.lng;
+                formPopup.style.display = 'block';
+                dimBackground.style.display = 'block';
+            });
+        }
+    });
+
+    mahasiswaForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        var name = document.getElementById('name').value;
+        var rating = document.getElementById('rating').value;
+        var address = document.getElementById('address').value;
+        var checkin = document.getElementById('checkin').value;
+        var checkout = document.getElementById('checkout').value;
+        var latitude = document.getElementById('latitude').value;
+        var longitude = document.getElementById('longitude').value;
+
+        var newData = {
+            name: name,
+            rating: rating,
+            address: address,
+            checkin: checkin,
+            checkout: checkout,
+            latitude: parseFloat(latitude),
+            longitude: parseFloat(longitude)
+        };
+
+        fetch('http://192.168.136.125:3000/mahasiswa', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(newData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                L.marker([latitude, longitude]).addTo(map)
+                    .bindPopup(`<strong>${name}</strong><br>
+                    Rating: ${rating}<br> Alamat: ${address}<br>Jam Operasional: ${checkin}-${checkout}`)
+                    .openPopup();
+
+                mahasiswaForm.reset();
+                formPopup.style.display = 'none';
+                dimBackground.style.display = 'none';
+                marker.remove();
+                marker = null;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    });
+
+    function loadData() {
+        fetch('http://192.168.136.125:3000/mahasiswa')
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(item => {
+                    L.marker([item.latitude, item.longitude]).addTo(map)
+                        .bindPopup(`<strong>${item.name}</strong><br>
+                        Rating: ${item.rating}<br>Alamat: ${item.address}<br>Jam Operasional: ${item.checkin}-${item.checkout}`);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+
+    refreshBtn.addEventListener('click', function () {
+        map.eachLayer(function (layer) {
+            if (layer instanceof L.Marker && layer !== marker) {
+                map.removeLayer(layer);
+            }
+        });
+        loadData();
+    });
+
+    loadData();
+</script>
+</body>
+
+</html>

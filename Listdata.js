@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Button, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, ActivityIndicator, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faGraduationCap, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faTree, faChevronRight, faTrash, faSync, faMapMarkerAlt, faHotel } from '@fortawesome/free-solid-svg-icons';
 
 const Listdata = () => {
   const jsonUrl = 'http://192.168.136.125:3000/mahasiswa';
@@ -13,11 +13,17 @@ const Listdata = () => {
   const fetchData = () => {
     setLoading(true);
     fetch(jsonUrl)
-      .then((response) => response.json())
-      .then((json) => {
-        setDataUser(json);
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Gagal mengambil data');
+        }
+        return response.json();
       })
-      .catch((error) => console.error(error))
+      .then((json) => setDataUser(json))
+      .catch((error) => {
+        console.error(error);
+        Alert.alert('Error', 'Gagal memuat data. Periksa koneksi Anda.');
+      })
       .finally(() => setLoading(false));
   };
 
@@ -28,90 +34,200 @@ const Listdata = () => {
   const refreshPage = () => {
     setRefresh(true);
     fetchData();
-    setRefresh(false);
+    setTimeout(() => setRefresh(false), 1000);
   };
 
   const deleteData = (id) => {
+    if (!id) {
+      Alert.alert('Error', 'ID tidak valid.');
+      return;
+    }
     fetch(`${jsonUrl}/${id}`, { method: 'DELETE' })
-      .then((response) => response.json())
       .then(() => {
-        Alert.alert('Data terhapus');
+        Alert.alert('Sukses', 'Data berhasil dihapus!');
         fetchData();
       })
-      .catch((error) => console.error(error));
+      .catch((error) => {
+        console.error(error);
+        Alert.alert('Error', 'Gagal menghapus data. Coba lagi nanti.');
+      });
+  };
+
+  const openInMaps = (latitude, longitude) => {
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+    Linking.openURL(url).catch(() =>
+      Alert.alert('Error', 'Tidak dapat membuka Google Maps.')
+    );
   };
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerText}>Daftar Hotel</Text>
+      </View>
       {isLoading ? (
-        <View style={{ alignItems: 'center', marginTop: 20 }}>
-          <Text style={styles.cardtitle}>Loading...</Text>
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" color="#4CAF50" />
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      ) : !isLoading && dataUser.length === 0 ? (
+        <View style={styles.loader}>
+          <Text style={styles.loadingText}>Tidak ada data untuk ditampilkan.</Text>
         </View>
       ) : (
         <FlatList
-          style={{ marginBottom: 0 }}
           data={dataUser}
           onRefresh={refreshPage}
           refreshing={refresh}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
-            <TouchableOpacity>
-              <View style={styles.card}>
-                <View style={styles.avatar}>
-                  <FontAwesomeIcon icon={faGraduationCap} size={50} color={item.color} />
-                </View>
-                <View>
-                  <Text style={styles.cardtitle}>{item.first_name} {item.last_name}</Text>
-                  <Text>{item.kelas}</Text>
-                  <Text>{item.gender}</Text>
-                </View>
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'flex-end' }}>
-                  <FontAwesomeIcon icon={faChevronRight} size={20} />
-                </View>
+
+            <TouchableOpacity style={styles.card}>
+              <View style={styles.avatar}>
+                <FontAwesomeIcon icon={faHotel} size={50} color="#11264e" />
               </View>
-              <View style={styles.form}>
-                <Button
-                  title="Hapus"
-                  onPress={() => Alert.alert('Hapus data', 'Yakin akan menghapus data ini?', [
-                    { text: 'Tidak', onPress: () => console.log('Tidak') },
-                    { text: 'Ya', onPress: () => deleteData(item.id) },
-                  ])}
-                  color="red"
-                />
+
+              <View style={styles.info}>
+                <Text style={styles.name}>{item.name}</Text>
+                <Text style={styles.detail}>Rating: {item.rating}</Text>
+                <Text style={styles.detail}>Alamat: {item.address}</Text>
+                <Text style={styles.detail}>Jam Operasional: {item.checkin} - {item.checkout}</Text>
+              </View>
+
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={styles.mapButton}
+                  onPress={() => openInMaps(item.latitude, item.longitude)}
+                  >
+                  <FontAwesomeIcon icon={faMapMarkerAlt} size={20} color="#fff" />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() =>
+                    Alert.alert('Hapus Data', 'Yakin ingin menghapus data ini?', [
+                      { text: 'Tidak', onPress: () => console.log('Tidak') },
+                      { text: 'Ya', onPress: () => deleteData(item.id) },
+                    ])
+                  }
+                >
+                  <FontAwesomeIcon icon={faTrash} size={20} color="#fff" />
+                </TouchableOpacity>
               </View>
             </TouchableOpacity>
           )}
         />
       )}
+
+      <TouchableOpacity style={styles.fab} onPress={refreshPage}>
+        <FontAwesomeIcon icon={faSync} size={20} color="#fff" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
 
+export default Listdata;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f4f4f9',
   },
-  form: {
-    padding: 10,
+  header: {
+    backgroundColor: '#7bb7f0',
+    paddingVertical: 15,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  headerText: {
+    fontSize: 26,
+    color: '#11264e',
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#11264e',
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 15,
-    marginVertical: 5,
+    marginVertical: 8,
     marginHorizontal: 10,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-    elevation: 2,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   avatar: {
     marginRight: 15,
+    backgroundColor: '#e8f5e9',
+    padding: 12,
+    borderRadius: 50,
   },
-  cardtitle: {
-    fontSize: 16,
+  info: {
+    flex: 1,
+  },
+  name: {
+    fontSize: 18,
     fontWeight: 'bold',
+    color: '#333',
+    
+  },
+  detail: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  mapButton: {
+    backgroundColor: '#11264e',
+    padding: 10,
+    borderRadius: 50,
+    elevation: 3,
+    marginBottom: 10, // Jarak dari tombol Hapus
+  },
+  deleteButton: {
+    backgroundColor: '#E63946',
+    padding: 10,
+    borderRadius: 50,
+    elevation: 3,
+  },
+  buttonContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#7bb7f0',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3.5,
   },
 });
-
-export default Listdata;

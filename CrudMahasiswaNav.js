@@ -1,20 +1,94 @@
 import * as React from 'react';
-import { Text, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Profil from './App';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faUser, faUserGraduate, faEdit, faPlusCircle, faUserPen } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faListCheck, faUserPen, faHotel, faMapLocation, faCartShopping } from '@fortawesome/free-solid-svg-icons';
 import { WebView } from 'react-native-webview';
-import { faGithub } from '@fortawesome/free-brands-svg-icons';
 import Createdata from './Createdata';
 import Listdata from './Listdata';
 import Editdata from './Editdata';
-import Mahasiswa from './Mahasiswa';
+import PesanKamar from './PesanKamar';
 
-function HomeScreen() {
+
+// File HTML for WebView
+const webmap = require('./map.html');
+
+// Tab Navigator
+const Tab = createBottomTabNavigator();
+
+export default function App() {
   return (
-    <Createdata />
+    <NavigationContainer>
+      <Tab.Navigator>
+        {/* Screen Map */}
+        <Tab.Screen
+          name="Map"
+          component={MapScreen}
+          options={{
+            headerShown: false,
+            tabBarIcon: ({ color }) => (
+              <FontAwesomeIcon icon={faMapLocation} color={color} size={20} />
+            ),
+          }}
+        />
+
+        {/* Screen Pesan */}
+        <Tab.Screen
+          name="Pesan Kamar"
+          component={DataScreen}
+          options={{
+            headerShown: false,
+            tabBarIcon: ({ color }) => (
+              <FontAwesomeIcon icon={faCartShopping} color={color} size={20} />
+            ),
+          }}
+        />
+
+        {/* Screen PesanKamar */}
+        <Tab.Screen
+          name="Pesanan"
+          component={PesanKamarScreen}
+          options={{
+            headerShown: false,
+            tabBarIcon: ({ color }) => (
+              <FontAwesomeIcon icon={faListCheck} color={color} size={20} />
+            ),
+          }}
+        />
+
+        {/* Screen Hotel */}
+        <Tab.Screen
+          name="Hotel"
+          component={SettingsScreen}
+          options={{
+            headerShown: false,
+            tabBarIcon: ({ color }) => (
+              <FontAwesomeIcon icon={faHotel} color={color} size={20} />
+            ),
+          }}
+        />
+
+        {/* Screen Edit Data */}
+        <Tab.Screen
+          name="Edit Data"
+          component={EditScreen}
+          options={{
+            headerShown: false,
+            tabBarIcon: ({ color }) => (
+              <FontAwesomeIcon icon={faUserPen} color={color} size={20} />
+            ),
+          }}
+        />
+      </Tab.Navigator>
+    </NavigationContainer>
+  );
+}
+
+// Screen Components
+
+function MapScreen() {
+  return (
+    <WebView source={webmap} />
   );
 }
 
@@ -24,58 +98,22 @@ function SettingsScreen() {
   );
 }
 
+function DataScreen() {
+  return (
+    <Createdata />
+  );
+}
+
+function PesanKamarScreen({ route }) {
+  const { pesanan } = route.params || {};
+
+  return (
+    <PesanKamar pesanan={pesanan} />
+  );
+}
+
 function EditScreen() {
   return (
-    <Editdata/>
-  );
-};
-
-
-const Tab = createBottomTabNavigator();
-
-export default function App() {
-  return (
-    <NavigationContainer>
-      <Tab.Navigator>
-        <Tab.Screen
-          name="Tambah"
-          component={HomeScreen}
-          options={{
-            headerShown: false,
-            tabBarIcon: ({ color }) => (
-              <FontAwesomeIcon icon={faPlusCircle} color={color} size={20} />
-            ),
-          }}
-        />
-        <Tab.Screen
-          name="Data Mahasiswa"
-          component={SettingsScreen}
-          options={{
-            tabBarIcon: ({ color }) => (
-              <FontAwesomeIcon icon={faUserGraduate} color={color} size={20} />
-            ),
-          }}
-        />
-        <Tab.Screen
-          name="Edit"
-          component={EditScreen}
-          options={{
-            tabBarIcon: ({ color }) => (
-              <FontAwesomeIcon icon={faUserPen} color={color} size={20} />
-            ),
-          }}
-        />
-        {/* <Tab.Screen
-                  name="Edit"
-                  component={EditdataScreen}
-                  options={{
-                    headerShown: false,
-                    tabBarIcon: ({ color }) => (
-                      <FontAwesomeIcon icon={faEdit} color={color} size={20} />
-                    ),
-                  }}
-                /> */}
-      </Tab.Navigator>
-    </NavigationContainer>
+    <Editdata />
   );
 }
