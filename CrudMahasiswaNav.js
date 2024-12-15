@@ -8,6 +8,7 @@ import Createdata from './Createdata';
 import Listdata from './Listdata';
 import Editdata from './Editdata';
 import PesanKamar from './PesanKamar';
+import LandingPage from './LandingPage'
 
 
 // File HTML for WebView

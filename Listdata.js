@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, ActivityIndicator, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, ActivityIndicator, Linking, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faTree, faChevronRight, faTrash, faSync, faMapMarkerAlt, faHotel } from '@fortawesome/free-solid-svg-icons';
+import { faTrash, faSync, faMapMarkerAlt, faHotel, faStar, faClock, faMapMarker } from '@fortawesome/free-solid-svg-icons';
 
 const Listdata = () => {
   const jsonUrl = 'http://192.168.136.125:3000/mahasiswa';
@@ -81,24 +81,35 @@ const Listdata = () => {
           refreshing={refresh}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
-
             <TouchableOpacity style={styles.card}>
               <View style={styles.avatar}>
-                <FontAwesomeIcon icon={faHotel} size={50} color="#11264e" />
+                {item.image ? (
+                  <Image
+                    source={{ uri: item.image }}
+                    style={styles.image}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <FontAwesomeIcon icon={faHotel} size={40} color="#11264e" />
+                )}
               </View>
 
               <View style={styles.info}>
                 <Text style={styles.name}>{item.name}</Text>
-                <Text style={styles.detail}>Rating: {item.rating}</Text>
-                <Text style={styles.detail}>Alamat: {item.address}</Text>
-                <Text style={styles.detail}>Jam Operasional: {item.checkin} - {item.checkout}</Text>
+                <View style={styles.rating}>
+                  <FontAwesomeIcon icon={faStar} size={16} color="#FFD700" /><Text style={styles.ratingText}>{item.rating}</Text>
+                </View>
+                
+                <Text style={styles.detail}><FontAwesomeIcon icon={faClock} size={16} color="#11264e" /> {item.checkin} - {item.checkout}
+                </Text>
+                <Text style={styles.detail}><FontAwesomeIcon icon={faMapMarker} size={16} color="#11264e" />{item.address}</Text>
               </View>
 
               <View style={styles.buttonContainer}>
                 <TouchableOpacity
                   style={styles.mapButton}
                   onPress={() => openInMaps(item.latitude, item.longitude)}
-                  >
+                >
                   <FontAwesomeIcon icon={faMapMarkerAlt} size={20} color="#fff" />
                 </TouchableOpacity>
 
@@ -178,9 +189,17 @@ const styles = StyleSheet.create({
   },
   avatar: {
     marginRight: 15,
-    backgroundColor: '#e8f5e9',
-    padding: 12,
     borderRadius: 50,
+    overflow: 'hidden',
+    width: 60,
+    height: 60,
+    backgroundColor: '#e8f5e9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
   },
   info: {
     flex: 1,
@@ -189,7 +208,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
-    
+  },
+  rating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  ratingText: {
+    marginLeft: 5,
+    fontSize: 14,
+    color: '#666',
   },
   detail: {
     fontSize: 14,
@@ -201,7 +229,7 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 50,
     elevation: 3,
-    marginBottom: 10, // Jarak dari tombol Hapus
+    marginBottom: 10,
   },
   deleteButton: {
     backgroundColor: '#E63946',

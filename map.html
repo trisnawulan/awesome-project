@@ -4,9 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Peta Interaktif dengan Marker dan Form Input</title>
+    <title>Lokasi Persebaran Hotel</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
         html,
         body {
@@ -16,13 +18,12 @@
         }
 
         #map {
-            height: calc(100% - 100px); /* Kurangi tinggi map agar tidak menutupi header */
+            height: calc(100% - 100px);
             width: 100%;
         }
 
-        /* Header Styling */
         .header {
-            background-color: #7bb7f0; /* Green color for header */
+            background-color: #7bb7f0;
             padding: 15px 0;
             border-bottom-left-radius: 20px;
             border-bottom-right-radius: 20px;
@@ -42,16 +43,14 @@
             letter-spacing: 1px;
         }
 
-        /* Peta Fullscreen */
         #map {
             position: absolute;
-            top: 60px; /* Header height */
+            top: 60px;
             left: 0;
             width: 100%;
-            height: calc(100% - 60px); /* Full height minus header */
+            height: calc(100% - 60px);
         }
 
-        /* Popup Form Styling */
         #form-popup {
             display: none;
             position: fixed;
@@ -76,6 +75,7 @@
         }
 
         input[type="text"],
+        input[type="file"],
         button {
             display: block;
             width: 100%;
@@ -105,7 +105,6 @@
             background-color: #D62828;
         }
 
-        /* Dim Background when Form is Open */
         #dim-background {
             display: none;
             position: fixed;
@@ -138,10 +137,6 @@
             justify-content: center;
         }
 
-        #add-point-btn:hover {
-            background: #92b3f0;
-        }
-
         /* Refresh Button */
         #refresh-btn {
             position: absolute;
@@ -162,115 +157,130 @@
             justify-content: center;
         }
 
-        #refresh-btn:hover {
-            background: #1976D2;
+        .rating-icon {
+            color: gold; /* Warna kuning untuk bintang */
         }
+
+        .hours-icon {
+            color: rgb(19, 64, 100); /* Warna biru untuk jam */
+        }
+
+        .marker-icon {
+            color: rgb(245, 51, 25); /* Warna biru untuk jam */
+        }
+
     </style>
 </head>
 
 <body>
-<!-- Header -->
-<div class="header">
-    <h1 class="header-text">Persebaran Hotel</h1>
-</div>
+    <div class="header">
+        <h1 class="header-text">Persebaran Hotel</h1>
+    </div>
 
-<div id="dim-background"></div>
-<button id="add-point-btn">Tambahkan Titik</button>
-<button id="refresh-btn">🔄</button>
-<div id="map"></div>
+    <div id="dim-background"></div>
+    <button id="add-point-btn">Tambahkan Titik</button>
+    <button id="refresh-btn">🔄</button>
+    <div id="map"></div>
 
-<!-- Form Popup -->
-<div id="form-popup">
-    <h2>Tambah Data</h2>
-    <form id="mahasiswaForm">
-        <input type="text" id="name" placeholder="Nama Hotel" required />
-        <input type="text" id="rating" placeholder="Rating" required />
-        <input type="text" id="address" placeholder="Alamat" required />
-        <input type="text" id="checkin" placeholder="Check-in" required />
-        <input type="text" id="checkout" placeholder="Check-out" required />
-        <input type="hidden" id="latitude" />
-        <input type="hidden" id="longitude" />
-        <button type="submit">Tambah Data</button>
-        <button type="button" id="close-button">Tutup</button>
-    </form>
-</div>
+    <!-- Form Popup -->
+    <div id="form-popup">
+        <h2>Tambah Data</h2>
+        <form id="hotelForm">
+            <input type="text" id="name" placeholder="Nama Hotel" required />
+            <input type="text" id="rating" placeholder="Rating" required />
+            <input type="text" id="address" placeholder="Alamat" required />
+            <input type="text" id="checkin" placeholder="Check-in" required />
+            <input type="text" id="checkout" placeholder="Check-out" required />
+            <input type="file" id="image" accept="image/*" />
+            <input type="hidden" id="latitude" />
+            <input type="hidden" id="longitude" />
+            <button type="submit">Tambah Data</button>
+            <button type="button" id="close-button">Tutup</button>
+        </form>
+    </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script>
-    var map = L.map('map').setView([-7.774796670378405, 110.37442978811552], 13);
+    <script>
+        var map = L.map('map').setView([-7.774796670378405, 110.37442978811552], 13);
 
-    // Basemap
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18
-    }).addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18
+        }).addTo(map);
 
-    var formPopup = document.getElementById('form-popup');
-    var dimBackground = document.getElementById('dim-background');
-    var closeButton = document.getElementById('close-button');
-    var addPointBtn = document.getElementById('add-point-btn');
-    var refreshBtn = document.getElementById('refresh-btn');
-    var mahasiswaForm = document.getElementById('mahasiswaForm');
-    var marker = null;
+        var formPopup = document.getElementById('form-popup');
+        var dimBackground = document.getElementById('dim-background');
+        var closeButton = document.getElementById('close-button');
+        var addPointBtn = document.getElementById('add-point-btn');
+        var refreshBtn = document.getElementById('refresh-btn');
+        var hotelForm = document.getElementById('hotelForm');
+        var marker = null;
 
-    // Event untuk menutup form
-    closeButton.addEventListener('click', function () {
-        formPopup.style.display = 'none';
-        dimBackground.style.display = 'none';
-    });
+        closeButton.addEventListener('click', function () {
+            formPopup.style.display = 'none';
+            dimBackground.style.display = 'none';
+        });
 
-    // Event tombol tambah titik
-    addPointBtn.addEventListener('click', function () {
-        if (!marker) {
-            marker = L.marker(map.getCenter(), { draggable: true }).addTo(map);
-            marker.bindPopup('Geser marker ke lokasi yang diinginkan, lalu klik marker untuk menambahkan data.').openPopup();
+        addPointBtn.addEventListener('click', function () {
+            if (!marker) {
+                marker = L.marker(map.getCenter(), { draggable: true }).addTo(map);
+                marker.bindPopup('Geser marker ke lokasi yang diinginkan, lalu klik marker untuk menambahkan data.').openPopup();
 
-            marker.on('click', function () {
-                var latLng = marker.getLatLng();
-                document.getElementById('latitude').value = latLng.lat;
-                document.getElementById('longitude').value = latLng.lng;
-                formPopup.style.display = 'block';
-                dimBackground.style.display = 'block';
-            });
-        }
-    });
+                marker.on('click', function () {
+                    var latLng = marker.getLatLng();
+                    document.getElementById('latitude').value = latLng.lat;
+                    document.getElementById('longitude').value = latLng.lng;
+                    formPopup.style.display = 'block';
+                    dimBackground.style.display = 'block';
+                });
+            }
+        });
 
-    mahasiswaForm.addEventListener('submit', function (event) {
-        event.preventDefault();
+        hotelForm.addEventListener('submit', function (event) {
+            event.preventDefault();
 
-        var name = document.getElementById('name').value;
-        var rating = document.getElementById('rating').value;
-        var address = document.getElementById('address').value;
-        var checkin = document.getElementById('checkin').value;
-        var checkout = document.getElementById('checkout').value;
-        var latitude = document.getElementById('latitude').value;
-        var longitude = document.getElementById('longitude').value;
+            var name = document.getElementById('name').value;
+            var rating = document.getElementById('rating').value;
+            var address = document.getElementById('address').value;
+            var checkin = document.getElementById('checkin').value;
+            var checkout = document.getElementById('checkout').value;
+            var latitude = document.getElementById('latitude').value;
+            var longitude = document.getElementById('longitude').value;
+            var image = document.getElementById('image').files[0];
 
-        var newData = {
-            name: name,
-            rating: rating,
-            address: address,
-            checkin: checkin,
-            checkout: checkout,
-            latitude: parseFloat(latitude),
-            longitude: parseFloat(longitude)
-        };
+            var newData = {
+                name: name,
+                rating: rating,
+                address: address,
+                checkin: checkin,
+                checkout: checkout,
+                latitude: parseFloat(latitude),
+                longitude: parseFloat(longitude),
+                image: image ? URL.createObjectURL(image) : null
+            };
 
-        fetch('http://192.168.136.125:3000/mahasiswa', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(newData)
-        })
+            fetch('http://192.168.136.125:3000/mahasiswa', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(newData)
+            })
             .then(response => response.json())
             .then(data => {
+                var popupContent = `<strong>${name}</strong><br>
+                    <i class="fas fa-star rating-icon"></i> ${rating}<br>
+                        <i class="fas fa-clock hours-icon"></i> ${item.checkin}-${item.checkout}<br>
+                        <i class="fas fa-map-marker-alt"></i> ${item.address};`;
+                if (newData.image) {
+                    popupContent += `<br><img src="${newData.image}" alt="Hotel Image" style="width: 100px; height: auto;">`;
+                }
+
                 L.marker([latitude, longitude]).addTo(map)
-                    .bindPopup(`<strong>${name}</strong><br>
-                    Rating: ${rating}<br> Alamat: ${address}<br>Jam Operasional: ${checkin}-${checkout}`)
+                    .bindPopup(popupContent)
                     .openPopup();
 
-                mahasiswaForm.reset();
+                hotelForm.reset();
                 formPopup.style.display = 'none';
                 dimBackground.style.display = 'none';
                 marker.remove();
@@ -279,34 +289,39 @@
             .catch(error => {
                 console.error('Error:', error);
             });
-    });
-
-    function loadData() {
-        fetch('http://192.168.136.125:3000/mahasiswa')
-            .then(response => response.json())
-            .then(data => {
-                data.forEach(item => {
-                    L.marker([item.latitude, item.longitude]).addTo(map)
-                        .bindPopup(`<strong>${item.name}</strong><br>
-                        Rating: ${item.rating}<br>Alamat: ${item.address}<br>Jam Operasional: ${item.checkin}-${item.checkout}`);
-                });
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-    }
-
-    refreshBtn.addEventListener('click', function () {
-        map.eachLayer(function (layer) {
-            if (layer instanceof L.Marker && layer !== marker) {
-                map.removeLayer(layer);
-            }
         });
+
+        function loadData() {
+            fetch('http://192.168.136.125:3000/mahasiswa')
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(item => {
+                        var popupContent = `<strong>${item.name}</strong><br>
+                        <i class="fas fa-star rating-icon"></i> ${item.rating}<br>
+                        <i class="fas fa-clock hours-icon"></i> ${item.checkin}-${item.checkout}<br>
+                        <i class="fas fa-map-marker-alt"></i> ${item.address};`;
+                        if (item.image) {
+                            popupContent += `<br><img src="${item.image}" alt="Hotel Image" style="width: 100px; height: auto;">`;
+                        }
+                        L.marker([item.latitude, item.longitude]).addTo(map)
+                            .bindPopup(popupContent);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        refreshBtn.addEventListener('click', function () {
+            map.eachLayer(function (layer) {
+                if (layer instanceof L.Marker && layer !== marker) {
+                    map.removeLayer(layer);
+                }
+            });
+            loadData();
+        });
+
         loadData();
-    });
-
-    loadData();
-</script>
+    </script>
 </body>
-
 </html>

@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 
 const Createdata = () => {
   const jsonUrl = 'http://192.168.136.125:3000/mahasiswa'; // Adjust API URL
+  const orderUrl = 'http://192.168.136.125:4000/order'; // Adjust API URL
   const navigation = useNavigation();
 
   // State for dropdown and form
@@ -37,6 +38,9 @@ const Createdata = () => {
         setNames(dropdownItems);
       })
       .catch(() => Alert.alert('Error', 'Failed to load data.'));
+
+
+      
   }, []);
 
   // Function to handle order submission
@@ -58,6 +62,25 @@ const Createdata = () => {
       catatan,
     };
 
+                // Tambah data baru
+                fetch(orderUrl, {
+                  method: 'POST',
+                  headers: {
+                      Accept: 'application/json',
+                      'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(dataPesanan),
+              })
+                  .then((response) => response.json())
+                  .then(() => {
+                      alert('Data tersimpan');
+                      resetForm();
+                      refreshPage();
+                  });
+
+
+        navigation.navigate('Pesanan');
+         
     // Add order to the list
     setOrderList((prevList) => [...prevList, dataPesanan]);
 
