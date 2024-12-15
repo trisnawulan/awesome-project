@@ -21,21 +21,19 @@ Aplikasi ini menggunakan data:
 - Data hotel yang diunggah oleh pengguna.
 
 ## Tangkapan Layar Komponen Penting Produk
-### Halaman Utama
-![Halaman Utama](./screenshots/pesan.jpeg)
+### Halaman Persebaran Lokasi
+![Halaman Utama](./screenshots/peta.jpeg)
 
-### Halaman Input Data
-![Halaman Input Data](./screenshots/inputdata.jpeg)
+### Halaman Pemesanan Kamar
+![Halaman Pemesanan Kamar](./screenshots/pesan_kamar.jpeg)
 
-### Halaman List Data
-![Halaman List Data](./screenshots/datatanaman.jpeg)
+### Halaman Pesanan
+![Halaman Pesanan](./screenshots/pesanan.jpeg)
 
-### Halaman Maps
-![Halaman Maps](./screenshots/map.jpeg)
+### Halaman Daftar Hotel
+![Halaman Daftar Hotel](./screenshots/list_hotel.jpeg)
 
 ### Halaman Edit Data
-![Halaman Edit Data](./screenshots/edit.jpeg)
+![Halaman Edit Data](./screenshots/edit_data.jpeg)
 
-### Halaman Tentang
-![Halaman Tentang App](./screenshots/tentang.jpeg)
 
