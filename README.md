@@ -22,18 +22,17 @@ Aplikasi ini menggunakan data:
 
 ## Tangkapan Layar Komponen Penting Produk
 ### Halaman Persebaran Lokasi
-![Halaman Utama](./screenshots/peta.jpeg)
+<img src="./screenshots/peta.jpeg" alt="Halaman Utama" width="400"/>
 
 ### Halaman Pemesanan Kamar
-![Halaman Pemesanan Kamar](./screenshots/pesan_kamar.jpeg)
+<img src="./screenshots/pesan_kamar.jpeg" alt="Halaman Pemesanan Kamar" width="400"/>
 
 ### Halaman Pesanan
-![Halaman Pesanan](./screenshots/pesanan.jpeg)
+<img src="./screenshots/pesanan.jpeg" alt="Halaman Pesanan" width="400"/>
 
 ### Halaman Daftar Hotel
-![Halaman Daftar Hotel](./screenshots/list_hotel.jpeg)
+<img src="./screenshots/list_hotel.jpeg" alt="Halaman Daftar Hotel" width="400"/>
 
 ### Halaman Edit Data
-![Halaman Edit Data](./screenshots/edit_data.jpeg)
-
+<img src="./screenshots/edit_data.jpeg" alt="Halaman Edit Data" width="400"/>
 
